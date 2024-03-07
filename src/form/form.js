@@ -1,5 +1,5 @@
 import "../assets/styles/styles.scss";
-import '../assets/javascripts/topbar.js';
+import "../assets/javascripts/topbar.js";
 import "./form.scss";
 import { openModal } from "../assets/javascripts/modal";
 
@@ -9,7 +9,7 @@ const btnCancel = document.querySelector(".btn-secondary");
 let articleId;
 let errors = [];
 
-const fillForm = article => {
+const fillForm = (article) => {
   const author = document.querySelector('input[name="author"]');
   const img = document.querySelector('input[name="img"]');
   const category = document.querySelector('input[name="category"]');
@@ -45,29 +45,30 @@ btnCancel.addEventListener("click", async () => {
   }
 });
 
-form.addEventListener("submit", async event => {
+form.addEventListener("submit", async (event) => {
   event.preventDefault();
   const formData = new FormData(form);
   const article = Object.fromEntries(formData.entries());
   if (formIsValid(article)) {
     try {
       const json = JSON.stringify(article);
+      console.log("json : ", json);
       let response;
       if (articleId) {
         response = await fetch(`https://restapi.fr/api/article/${articleId}`, {
           method: "PATCH",
           body: json,
           headers: {
-            "Content-Type": "application/json"
-          }
+            "Content-Type": "application/json",
+          },
         });
       } else {
         response = await fetch("https://restapi.fr/api/article", {
           method: "POST",
           body: json,
           headers: {
-            "Content-Type": "application/json"
-          }
+            "Content-Type": "application/json",
+          },
         });
       }
       if (response.status < 299) {
@@ -79,7 +80,7 @@ form.addEventListener("submit", async event => {
   }
 });
 
-const formIsValid = article => {
+const formIsValid = (article) => {
   errors = [];
   if (
     !article.author ||
@@ -94,7 +95,7 @@ const formIsValid = article => {
   }
   if (errors.length) {
     let errorHTML = "";
-    errors.forEach(e => {
+    errors.forEach((e) => {
       errorHTML += `<li>${e}</li>`;
     });
     errorElement.innerHTML = errorHTML;
