@@ -51,15 +51,15 @@
     .article {
       background: white;
       padding: 0 5rem;
-      @include xs {
-        padding: 0 2rem;
-      }
       border-radius: 0.3rem;
       display: flex;
       margin-bottom: 5rem;
       flex-direction: column;
       align-items: center;
       box-shadow: var(--box-shadow);
+      @include xs {
+        padding: 0 2rem;
+      }
       img {
         height: 6rem;
         width: 6rem;

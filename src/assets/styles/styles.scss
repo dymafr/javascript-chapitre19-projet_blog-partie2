@@ -33,10 +33,10 @@ header {
   .header-menu {
     position: relative;
     ul {
+      display: flex;
       @include xs {
         display: none;
       }
-      display: flex;
       li {
         .header-nav {
           font-size: 1.8rem;
