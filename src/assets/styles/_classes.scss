@@ -12,6 +12,12 @@
   font-weight: 700;
   cursor: pointer;
   transition: box-shadow 0.2s;
+
+  &:disabled {
+    cursor: wait;
+    opacity: 0.65;
+  }
+
   &:hover {
     box-shadow: var(--box-shadow);
     transition: box-shadow 0.2s;
@@ -38,28 +44,33 @@
   }
 }
 
-.calc {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  .modal {
-    background: white;
-    min-width: 30rem;
-    border-radius: 3px;
-    padding: 5rem;
-    box-shadow: var(--box-shadow);
-    text-align: center;
-    p {
-      margin: 1rem 0 3rem 0;
-    }
-    .btn {
-      margin-left: 0.5rem;
-    }
+.modal-dialog {
+  width: min(42rem, calc(100vw - 2rem));
+  min-width: min(30rem, calc(100vw - 2rem));
+  border: 0;
+  border-radius: 0.3rem;
+  padding: 5rem;
+  background: white;
+  box-shadow: var(--box-shadow);
+  text-align: center;
+
+  &::backdrop {
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  p {
+    margin: 1rem 0 3rem;
+  }
+
+  .modal-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  .btn:focus-visible {
+    outline: 0.3rem solid var(--primary);
+    outline-offset: 0.2rem;
   }
 }

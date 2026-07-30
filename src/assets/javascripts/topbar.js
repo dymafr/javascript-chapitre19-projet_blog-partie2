@@ -1,52 +1,55 @@
-const iconMobile = document.querySelector(".header-menu-icon");
+const menuButton = document.querySelector(".header-menu-icon");
 const headerMenu = document.querySelector(".header-menu");
-let isMenuOpen = false;
-let mobileMenuDOM;
 
-const closeMenu = () => {
-  mobileMenuDOM.classList.remove("open");
-};
+if (menuButton && headerMenu) {
+  let mobileMenuElement = null;
 
-const createMobileMenu = () => {
-  mobileMenuDOM = document.createElement("div");
-  mobileMenuDOM.classList.add("mobile-menu");
-  mobileMenuDOM.addEventListener("click", event => {
+  const setMenuState = isOpen => {
+    if (!mobileMenuElement && isOpen) {
+      const navigationList = headerMenu.querySelector("nav ul");
+
+      if (!navigationList) {
+        return;
+      }
+
+      mobileMenuElement = document.createElement("div");
+      mobileMenuElement.classList.add("mobile-menu");
+      mobileMenuElement.append(navigationList.cloneNode(true));
+      headerMenu.append(mobileMenuElement);
+    }
+
+    mobileMenuElement?.classList.toggle("open", isOpen);
+    menuButton.setAttribute("aria-expanded", String(isOpen));
+    menuButton.setAttribute(
+      "aria-label",
+      isOpen ? "Fermer le menu" : "Ouvrir le menu"
+    );
+  };
+
+  menuButton.addEventListener("click", event => {
+    event.stopPropagation();
+    const isOpen = menuButton.getAttribute("aria-expanded") === "true";
+    setMenuState(!isOpen);
+  });
+
+  headerMenu.addEventListener("click", event => {
     event.stopPropagation();
   });
-  mobileMenuDOM.append(headerMenu.querySelector("ul").cloneNode(true));
-  headerMenu.append(mobileMenuDOM);
-};
 
-const openMenu = () => {
-  if (mobileMenuDOM) {
-  } else {
-    createMobileMenu();
-  }
-  mobileMenuDOM.classList.add("open");
-};
+  window.addEventListener("click", () => {
+    setMenuState(false);
+  });
 
-const toggleMobileMenu = event => {
-  if (isMenuOpen) {
-    closeMenu();
-  } else {
-    openMenu();
-  }
-  isMenuOpen = !isMenuOpen;
-};
+  window.addEventListener("keydown", event => {
+    if (event.key === "Escape") {
+      setMenuState(false);
+      menuButton.focus();
+    }
+  });
 
-iconMobile.addEventListener("click", event => {
-  event.stopPropagation();
-  toggleMobileMenu();
-});
-
-window.addEventListener("click", () => {
-  if (isMenuOpen) {
-    toggleMobileMenu();
-  }
-});
-
-window.addEventListener("resize", event => {
-  if (window.innerWidth > 480 && isMenuOpen) {
-    toggleMobileMenu();
-  }
-});
+  window.addEventListener("resize", () => {
+    if (window.innerWidth > 480) {
+      setMenuState(false);
+    }
+  });
+}

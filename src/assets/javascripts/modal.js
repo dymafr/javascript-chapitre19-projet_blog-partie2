@@ -1,51 +1,94 @@
-const body = document.querySelector("body");
-let calc;
-let modal;
-let cancel;
-let confirm;
+let openedDialog = null;
 
-const createCalc = () => {
-  calc = document.createElement("div");
-  calc.classList.add("calc");
-};
-
-const createModal = question => {
-  modal = document.createElement("div");
-  modal.classList.add("modal");
-  modal.innerHTML = `
-    <p>${question}</p>
-  `;
-  cancel = document.createElement("button");
-  cancel.innerText = "Annuler";
-  cancel.classList.add("btn", "btn-secondary");
-  confirm = document.createElement("button");
-  confirm.classList.add("btn", "btn-primary");
-  confirm.innerText = "Confirmer";
-  modal.addEventListener("click", event => {
-    event.stopPropagation();
-  });
-  modal.append(cancel, confirm);
+const closePreviousDialog = () => {
+  if (openedDialog?.open) {
+    openedDialog.close("cancel");
+  }
 };
 
 export function openModal(question) {
-  createCalc();
-  createModal(question);
-  calc.append(modal);
-  body.append(calc);
-  return new Promise((resolve, reject) => {
-    calc.addEventListener("click", () => {
-      resolve(false);
-      calc.remove();
-    });
+  closePreviousDialog();
 
-    cancel.addEventListener("click", () => {
-      resolve(false);
-      calc.remove();
-    });
+  const invokingElement =
+    document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
 
-    confirm.addEventListener("click", () => {
-      resolve(true);
-      calc.remove();
-    });
+  const dialog = document.createElement("dialog");
+  dialog.classList.add("modal-dialog");
+  dialog.setAttribute("aria-labelledby", "modal-question");
+
+  const form = document.createElement("form");
+  form.method = "dialog";
+
+  const questionElement = document.createElement("p");
+  questionElement.id = "modal-question";
+  questionElement.textContent = String(question);
+
+  const actionsElement = document.createElement("div");
+  actionsElement.classList.add("modal-actions");
+
+  const cancelButton = document.createElement("button");
+  cancelButton.type = "submit";
+  cancelButton.value = "cancel";
+  cancelButton.className = "btn btn-secondary";
+  cancelButton.textContent = "Annuler";
+
+  const confirmButton = document.createElement("button");
+  confirmButton.type = "submit";
+  confirmButton.value = "confirm";
+  confirmButton.className = "btn btn-primary";
+  confirmButton.textContent = "Confirmer";
+
+  actionsElement.append(cancelButton, confirmButton);
+  form.append(questionElement, actionsElement);
+  dialog.append(form);
+
+  dialog.addEventListener(
+    "cancel",
+    () => {
+      dialog.returnValue = "cancel";
+    },
+    { once: true }
+  );
+
+  dialog.addEventListener("click", event => {
+    if (event.target !== dialog) {
+      return;
+    }
+
+    const bounds = dialog.getBoundingClientRect();
+    const clickIsInside =
+      event.clientX >= bounds.left &&
+      event.clientX <= bounds.right &&
+      event.clientY >= bounds.top &&
+      event.clientY <= bounds.bottom;
+
+    if (!clickIsInside) {
+      dialog.close("cancel");
+    }
+  });
+
+  return new Promise(resolve => {
+    dialog.addEventListener(
+      "close",
+      () => {
+        const confirmed = dialog.returnValue === "confirm";
+        dialog.remove();
+
+        if (openedDialog === dialog) {
+          openedDialog = null;
+        }
+
+        invokingElement?.focus();
+        resolve(confirmed);
+      },
+      { once: true }
+    );
+
+    document.body.append(dialog);
+    openedDialog = dialog;
+    dialog.showModal();
+    cancelButton.focus();
   });
 }

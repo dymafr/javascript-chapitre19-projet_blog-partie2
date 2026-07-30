@@ -25,10 +25,12 @@
       textarea {
         border: 1px solid var(--divider);
         padding: 1rem;
-        outline: 0;
         border-radius: 3px;
-        &:focus {
+
+        &:focus-visible {
           border-color: var(--accent);
+          outline: 0.3rem solid var(--primary);
+          outline-offset: 0.2rem;
         }
       }
       textarea {
@@ -39,8 +41,10 @@
       display: flex;
       justify-content: flex-end;
       align-items: center;
+      gap: 0.5rem;
+
       .btn {
-        margin-left: 0.5rem;
+        margin-left: 0;
       }
     }
   }

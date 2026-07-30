@@ -6,48 +6,75 @@
   justify-content: center;
   align-items: flex-start;
   padding-top: 5rem;
+
   .sidebar {
     flex: 0 0 25rem;
     padding: 0 2rem 2rem 2rem;
+
+    label {
+      display: block;
+      margin-bottom: 0.8rem;
+      font-weight: 700;
+    }
+
     select {
       width: 100%;
       margin-bottom: 2rem;
       border-radius: 0.3rem;
       background: white;
       border: 0;
-      outline: 0;
       padding: 1rem;
       box-shadow: var(--box-shadow);
+
+      &:focus-visible {
+        outline: 0.3rem solid var(--primary);
+        outline-offset: 0.2rem;
+      }
     }
+
     .categories {
       padding: 2rem;
       background: white;
       border-radius: 0.3rem;
       box-shadow: var(--box-shadow);
+
       li {
         margin: 1rem;
-        transition: color 0.2s;
-        cursor: pointer;
-        &:hover {
-          color: var(--primary);
-          strong {
+
+        .category-button {
+          border: 0;
+          background: transparent;
+          color: inherit;
+          font: inherit;
+          cursor: pointer;
+          transition: color 0.2s;
+
+          &:hover {
             color: var(--primary);
+
+            strong {
+              color: var(--primary);
+            }
           }
         }
-      }
-      .active {
-        color: var(--primary);
-        font-weight: 700;
-        strong {
+
+        .category-button.active {
           color: var(--primary);
+          font-weight: 700;
+
+          strong {
+            color: inherit;
+          }
         }
       }
     }
   }
+
   .articles-container {
     max-width: 80rem;
     flex: 1;
     margin: 0 0 10rem 0;
+
     .article {
       background: white;
       padding: 0 5rem;
@@ -57,15 +84,19 @@
       flex-direction: column;
       align-items: center;
       box-shadow: var(--box-shadow);
+
       @include xs {
         padding: 0 2rem;
       }
+
       img {
         height: 6rem;
         width: 6rem;
+        object-fit: cover;
         border-radius: 50%;
         margin-top: -3rem;
       }
+
       h2 {
         margin-top: 2rem;
         margin-bottom: 0;
@@ -85,10 +116,20 @@
         padding: 2rem 0;
         margin-top: 2rem;
         border-top: 1px solid var(--divider);
+        gap: 1rem;
+        flex-wrap: wrap;
+
         .btn {
-          margin-left: 1rem;
+          margin-left: 0;
         }
       }
     }
+  }
+
+  .empty-state {
+    padding: 2rem;
+    background: white;
+    border-radius: 0.3rem;
+    box-shadow: var(--box-shadow);
   }
 }

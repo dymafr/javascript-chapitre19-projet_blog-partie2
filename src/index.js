@@ -1,152 +1,284 @@
-import './assets/styles/styles.scss';
-import './index.scss';
-import './assets/javascripts/topbar.js';
-import { openModal } from './assets/javascripts/modal';
+import "./assets/styles/styles.scss";
+import "./index.scss";
+import "./assets/javascripts/topbar.js";
+import { openModal } from "./assets/javascripts/modal.js";
 
-const articleContainerElement = document.querySelector('.articles-container');
-const categoriesContainerElement = document.querySelector('.categories');
-const selectElement = document.querySelector('select');
-let filter;
-let articles;
-let sortBy = 'desc';
+const API_URL = "https://restapi.fr/api/article";
+const SORT_ORDERS = new Set(["asc", "desc"]);
+const articleContainerElement = document.querySelector(".articles-container");
+const categoriesContainerElement = document.querySelector(".categories");
+const selectElement = document.querySelector("#sort-order");
 
-selectElement.addEventListener('change', () => {
-  sortBy = selectElement.value;
-  fetchArticle();
-});
+if (
+  !articleContainerElement ||
+  !categoriesContainerElement ||
+  !selectElement
+) {
+  throw new Error("Les éléments principaux de la liste sont requis.");
+}
 
-const createArticles = () => {
-  const articlesDOM = articles
-    .filter((article) => {
-      if (filter) {
-        return article.category === filter;
-      } else {
-        return true;
-      }
-    })
-    .map((article) => {
-      const articleDOM = document.createElement('div');
-      articleDOM.classList.add('article');
-      articleDOM.innerHTML = `
-<img
-  src="${article.img}"
-  alt="profile"
-/>
-<h2>${article.title}</h2>
-<p class="article-author">${article.author} - ${new Date(
-        article.createdAt
-      ).toLocaleDateString('fr-FR', {
-        weekday: 'long',
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric',
-      })}</p>
-<p class="article-content">
-  ${article.content}
-</p>
-<div class="article-actions">
-  <button class="btn btn-danger" data-id=${article._id} >Supprimer</button>
-  <button class="btn btn-primary" data-id=${article._id} >Modifier</button>
-</div>
-`;
-      return articleDOM;
-    });
-  articleContainerElement.innerHTML = '';
-  articleContainerElement.append(...articlesDOM);
-  const deleteButtons = articleContainerElement.querySelectorAll('.btn-danger');
-  const editButtons = articleContainerElement.querySelectorAll('.btn-primary');
-  editButtons.forEach((button) => {
-    button.addEventListener('click', (event) => {
-      const target = event.target;
-      const articleId = target.dataset.id;
-      location.assign(`/form/form.html?id=${articleId}`);
-    });
-  });
-  deleteButtons.forEach((button) => {
-    button.addEventListener('click', async (event) => {
-      const result = await openModal(
-        'Etes vous sur de vouloir supprimer votre article ?'
-      );
-      if (result === true) {
-        try {
-          const target = event.target;
-          const articleId = target.dataset.id;
-          const response = await fetch(
-            `https://restapi.fr/api/article/${articleId}`,
-            {
-              method: 'DELETE',
-            }
-          );
-          const body = await response.json();
-          fetchArticle();
-        } catch (e) {
-          console.log('e : ', e);
-        }
-      }
-    });
-  });
+let articles = [];
+let activeCategory = null;
+let sortOrder = "desc";
+let articlesRequestController = null;
+
+const normalizeCategory = category => {
+  const normalizedCategory = String(category ?? "").trim();
+  return normalizedCategory || "Sans catégorie";
 };
 
-const displayMenuCategories = (categoriesArr) => {
-  const liElements = categoriesArr.map((categoryElem) => {
-    const li = document.createElement('li');
-    li.innerHTML = `${categoryElem[0]} ( <strong>${categoryElem[1]}</strong> )`;
-    if (categoryElem[0] === filter) {
-      li.classList.add('active');
-    }
-    li.addEventListener('click', () => {
-      if (filter === categoryElem[0]) {
-        filter = null;
-        li.classList.remove('active');
-        createArticles();
-      } else {
-        filter = categoryElem[0];
-        liElements.forEach((li) => {
-          li.classList.remove('active');
-        });
-        li.classList.add('active');
-        createArticles();
-      }
-    });
-    return li;
+const createArticleElement = article => {
+  const articleElement = document.createElement("article");
+  articleElement.classList.add("article");
+
+  const imageElement = document.createElement("img");
+  imageElement.src = String(article.img ?? "");
+  imageElement.alt = `Portrait de ${article.author ?? "l’auteur"}`;
+  imageElement.loading = "lazy";
+
+  const titleElement = document.createElement("h2");
+  titleElement.textContent = String(article.title ?? "");
+
+  const authorElement = document.createElement("p");
+  authorElement.classList.add("article-author");
+  const date = new Date(article.createdAt);
+  const formattedDate = Number.isNaN(date.getTime())
+    ? "date inconnue"
+    : date.toLocaleDateString("fr-FR", {
+        weekday: "long",
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+      });
+  authorElement.textContent =
+    `${article.author ?? "Auteur inconnu"} - ${formattedDate}`;
+
+  const contentElement = document.createElement("p");
+  contentElement.classList.add("article-content");
+  contentElement.textContent = String(article.content ?? "");
+
+  const actionsElement = document.createElement("div");
+  actionsElement.classList.add("article-actions");
+
+  const deleteButton = document.createElement("button");
+  deleteButton.type = "button";
+  deleteButton.className = "btn btn-danger";
+  deleteButton.dataset.action = "delete";
+  deleteButton.dataset.articleId = String(article._id);
+  deleteButton.textContent = "Supprimer";
+
+  const editButton = document.createElement("button");
+  editButton.type = "button";
+  editButton.className = "btn btn-primary";
+  editButton.dataset.action = "edit";
+  editButton.dataset.articleId = String(article._id);
+  editButton.textContent = "Modifier";
+
+  actionsElement.append(deleteButton, editButton);
+  articleElement.append(
+    imageElement,
+    titleElement,
+    authorElement,
+    contentElement,
+    actionsElement
+  );
+
+  return articleElement;
+};
+
+const getVisibleArticles = () => {
+  if (activeCategory === null) {
+    return articles;
+  }
+
+  return articles.filter(
+    article => normalizeCategory(article.category) === activeCategory
+  );
+};
+
+const renderArticles = () => {
+  const articleElements = getVisibleArticles().map(createArticleElement);
+
+  if (articleElements.length === 0) {
+    const emptyElement = document.createElement("p");
+    emptyElement.classList.add("empty-state");
+    emptyElement.textContent = "Aucun article dans cette catégorie.";
+    articleContainerElement.replaceChildren(emptyElement);
+    return;
+  }
+
+  articleContainerElement.replaceChildren(...articleElements);
+};
+
+const displayMenuCategories = categories => {
+  const itemElements = categories.map(([category, count]) => {
+    const itemElement = document.createElement("li");
+    const buttonElement = document.createElement("button");
+    const countElement = document.createElement("strong");
+    const isActive = category === activeCategory;
+
+    buttonElement.type = "button";
+    buttonElement.classList.add("category-button");
+    buttonElement.classList.toggle("active", isActive);
+    buttonElement.dataset.category = category;
+    buttonElement.setAttribute("aria-pressed", String(isActive));
+    countElement.textContent = String(count);
+
+    buttonElement.append(
+      document.createTextNode(`${category} (`),
+      countElement,
+      document.createTextNode(")")
+    );
+    itemElement.append(buttonElement);
+
+    return itemElement;
   });
 
-  categoriesContainerElement.innerHTML = '';
-  categoriesContainerElement.append(...liElements);
+  categoriesContainerElement.replaceChildren(...itemElements);
 };
 
 const createMenuCategories = () => {
-  const categories = articles.reduce((acc, article) => {
-    if (acc[article.category]) {
-      acc[article.category]++;
-    } else {
-      acc[article.category] = 1;
-    }
-    return acc;
-  }, {});
+  const categoryCounts = articles.reduce((counts, article) => {
+    const category = normalizeCategory(article.category);
+    counts[category] = (counts[category] ?? 0) + 1;
+    return counts;
+  }, Object.create(null));
 
-  const categoriesArr = Object.keys(categories)
-    .map((category) => {
-      return [category, categories[category]];
-    })
-    .sort((c1, c2) => c1[0].localeCompare(c2[0]));
-  displayMenuCategories(categoriesArr);
+  const categories = Object.entries(categoryCounts).toSorted(
+    ([firstCategory], [secondCategory]) =>
+      firstCategory.localeCompare(secondCategory, "fr")
+  );
+
+  if (
+    activeCategory !== null &&
+    !categories.some(([category]) => category === activeCategory)
+  ) {
+    activeCategory = null;
+  }
+
+  displayMenuCategories(categories);
 };
 
-const fetchArticle = async () => {
+const getArticlesUrl = () => {
+  const url = new URL(API_URL);
+  url.searchParams.set("sort", `createdAt:${sortOrder}`);
+  return url;
+};
+
+const fetchArticles = async () => {
+  articlesRequestController?.abort();
+  const controller = new AbortController();
+  articlesRequestController = controller;
+
   try {
-    const response = await fetch(
-      `https://restapi.fr/api/article?sort=createdAt:${sortBy}`
-    );
-    articles = await response.json();
-    if (!Array.isArray(articles)) {
-      articles = [articles];
+    const response = await fetch(getArticlesUrl(), {
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Chargement impossible : HTTP ${response.status}`);
     }
-    createArticles();
+
+    const body = await response.json();
+    articles = Array.isArray(body) ? body : body ? [body] : [];
+
     createMenuCategories();
-  } catch (e) {
-    console.log('e : ', e);
+    renderArticles();
+  } catch (error) {
+    if (controller.signal.aborted) {
+      return;
+    }
+
+    console.error(error);
+    articles = [];
+    activeCategory = null;
+    articleContainerElement.textContent =
+      "Impossible de charger les articles pour le moment.";
+    categoriesContainerElement.replaceChildren();
+  } finally {
+    if (articlesRequestController === controller) {
+      articlesRequestController = null;
+    }
   }
 };
 
-fetchArticle();
+selectElement.addEventListener("change", () => {
+  const nextSortOrder = selectElement.value;
+  sortOrder = SORT_ORDERS.has(nextSortOrder) ? nextSortOrder : "desc";
+  selectElement.value = sortOrder;
+  fetchArticles();
+});
+
+categoriesContainerElement.addEventListener("click", event => {
+  if (!(event.target instanceof Element)) {
+    return;
+  }
+
+  const buttonElement = event.target.closest("button[data-category]");
+
+  if (!buttonElement || !categoriesContainerElement.contains(buttonElement)) {
+    return;
+  }
+
+  const selectedCategory = buttonElement.dataset.category;
+  activeCategory =
+    activeCategory === selectedCategory ? null : selectedCategory;
+
+  renderArticles();
+  createMenuCategories();
+});
+
+articleContainerElement.addEventListener("click", async event => {
+  if (!(event.target instanceof Element)) {
+    return;
+  }
+
+  const buttonElement = event.target.closest(
+    "button[data-action][data-article-id]"
+  );
+
+  if (!buttonElement || !articleContainerElement.contains(buttonElement)) {
+    return;
+  }
+
+  const { action, articleId } = buttonElement.dataset;
+
+  if (action === "edit") {
+    window.location.assign(
+      `/form/form.html?id=${encodeURIComponent(articleId)}`
+    );
+    return;
+  }
+
+  if (action !== "delete") {
+    return;
+  }
+
+  const confirmed = await openModal(
+    "Êtes-vous sûr de vouloir supprimer cet article ?"
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  buttonElement.disabled = true;
+
+  try {
+    const response = await fetch(
+      `${API_URL}/${encodeURIComponent(articleId)}`,
+      { method: "DELETE" }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Suppression impossible : HTTP ${response.status}`);
+    }
+
+    await fetchArticles();
+  } catch (error) {
+    console.error(error);
+    buttonElement.disabled = false;
+  }
+});
+
+fetchArticles();

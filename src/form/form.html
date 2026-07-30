@@ -1,11 +1,12 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css?family=Muli:300,400,700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Mulish:wght@300;400;700&display=swap"
       rel="stylesheet"
     />
     <script
@@ -13,59 +14,74 @@
       crossorigin="anonymous"
     ></script>
     <script type="module" src="./form.js"></script>
-    <title>Blog</title>
+    <title>Blog — Écrire un article</title>
   </head>
   <body>
     <div class="container">
       <header>
-        <a class="header-brand" href="/">Blog</a>
+        <a class="header-brand" href="../index.html">Blog</a>
         <div class="header-menu">
-          <ul>
-            <li>
-              <a href="../index.html" class="header-nav">Accueil</a>
-            </li>
-            <li>
-              <a href="./form.html" class="header-nav active"
-                >Créer un article</a
-              >
-            </li>
-          </ul>
-          <div class="header-menu-icon">
-            <i class="fas fa-bars"></i>
-          </div>
+          <nav aria-label="Navigation principale">
+            <ul>
+              <li>
+                <a href="../index.html" class="header-nav">Accueil</a>
+              </li>
+              <li>
+                <a
+                  href="./form.html"
+                  class="header-nav active"
+                  aria-current="page"
+                >
+                  Créer un article
+                </a>
+              </li>
+            </ul>
+          </nav>
+          <button
+            type="button"
+            class="header-menu-icon"
+            aria-label="Ouvrir le menu"
+            aria-expanded="false"
+          >
+            <i class="fas fa-bars" aria-hidden="true"></i>
+          </button>
         </div>
       </header>
-      <div class="content">
+      <main class="content">
         <form>
-          <h2 class="title-underline">Ajouter un article</h2>
+          <h1 class="title-underline">Ajouter un article</h1>
           <div class="form-group">
-            <label>Auteur</label>
-            <input type="text" name="author" />
+            <label for="author">Auteur</label>
+            <input id="author" type="text" name="author" autocomplete="name" />
           </div>
           <div class="form-group">
-            <label>Image de profil</label>
-            <input type="text" name="img" />
+            <label for="img">Image de profil</label>
+            <input id="img" type="url" name="img" autocomplete="url" />
           </div>
           <div class="form-group">
-            <label>Categorie</label>
-            <input type="text" name="category" />
+            <label for="category">Catégorie</label>
+            <input id="category" type="text" name="category" />
           </div>
           <div class="form-group">
-            <label>Titre</label>
-            <input type="text" name="title" />
+            <label for="title">Titre</label>
+            <input id="title" type="text" name="title" />
           </div>
           <div class="form-group">
-            <label>Article</label>
-            <textarea name="content"></textarea>
+            <label for="content">Article</label>
+            <textarea id="content" name="content"></textarea>
           </div>
-          <ul class="text-error" id="errors"></ul>
+          <ul
+            class="text-error"
+            id="errors"
+            aria-live="assertive"
+          ></ul>
           <div class="form-btn-container">
             <button type="button" class="btn btn-secondary">Annuler</button>
             <button type="submit" class="btn btn-primary">Sauvegarder</button>
           </div>
         </form>
-      </div>
-      <footer>© blog</footer>
+      </main>
+      <footer><small>© Blog</small></footer>
     </div>
   </body>
 </html>
